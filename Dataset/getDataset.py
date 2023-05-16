@@ -38,9 +38,9 @@ if __name__ == '__main__':
 	dataset_names = ["MassachusettsRoads", "MassachusettsBuildings"]
 
 	for dataset_name in dataset_names:
-		link_file_images = "Links/{}/Images.txt".format(dataset_name)
-		link_file_targets = "Links/{}/Targets.txt".format(dataset_name)
-		output_directory = "{}/".format(dataset_name)
+		link_file_images = "Dataset/Links/{}/Images.txt".format(dataset_name)
+		link_file_targets = "Dataset/Links/{}/Targets.txt".format(dataset_name)
+		output_directory = "Dataset/{}/".format(dataset_name)
 
 		if not os.path.exists(output_directory):
 			os.mkdir(output_directory)
