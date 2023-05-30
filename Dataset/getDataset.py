@@ -1,53 +1,59 @@
 """
 Filename: getDataset.py
-Function:  Downloads the Massachusetts Roads Dataset or the Massachusetts Buildings Dataset. By changing "link_file" to point at a custom list of links, you can download any other dataset too.
-Author: Jerin Paul (https://github.com/Paulymorphous)
-Website: https://www.livetheaiexperience.com/
+Function:  Downloads the Massachusetts Roads Dataset and the Massachusetts Buildings Dataset.
+Author: Tobias Scala
 """
-import urllib.request
 import os
+import urllib.request
 from tqdm import tqdm
 import time
+import math
 
-def download_images(link_file_images, output_directory, image_type):
-	"""
-	Reads a file with links to the images, and downloads them to the specified location.
-	Parameters:
-		>link_file_images (str): path to the file with images.
-		>output_directory (str): path to target directory.
-		>image_type (str): Whether the images are target masks or satellite images.
-	"""
+def download_images(input_path, output_path, dataset_split=0.1):
+	dataset_paths = [os.path.join(output_path, "Train"), os.path.join(output_path, "Test")]
+	dataset_types = ["Images", "Targets"]
 
-	print("\nDownloading", image_type)
-	
-	counter = 0
-	with open(link_file_images, 'r') as link_file:
-		image_links = link_file.readlines()
+	for dataset_path in dataset_paths:
+		if not os.path.exists(dataset_path):
+			os.mkdir(dataset_path)
+		
+		dataset_split = 1-dataset_split
+		for dataset_type in dataset_types:
+			input_path = os.path.join(input_path, dataset_type + ".txt")
+			output_path = os.path.join(dataset_path, dataset_type)
+			if not os.path.exists(output_path):
+				os.mkdir(output_path)
 
-	for image_link in tqdm(image_links, total = len(image_links)):
-		if(image_link[-1] == '\n'):
-			image_link = image_link[:-1]
-		image_path = output_directory + image_type + "/" + os.path.basename(image_link)
-		urllib.request.urlretrieve(image_link, image_path)
-		counter += 1
-	
-	print("{} images downloaded to {}\n".format(counter, output_directory+image_type))
+			print("Downloading to " + output_path + '.')
+			counter = 0
+			with open(input_path, 'r') as input_files:
+				input_files = input_files.readlines()
+				if(dataset_split > 1-dataset_split):
+					input_files = input_files[:math.ceil(dataset_split*len(input_files))] # Trainset
+				else:
+					input_files = input_files[math.floor((1-dataset_split)*len(input_files)):] # Testset
+
+			for input_file in tqdm(input_files, total=len(input_files)):
+				if(input_file[-1] == '\n'):
+					input_file = input_file[:-1] # The EOL (end of line) is removed.
+				urllib.request.urlretrieve(input_file, os.path.join(output_path, os.path.basename(input_file)))
+				counter += 1
+
+			input_path = os.path.dirname(input_path) # Head of the path.
+			output_path = os.path.dirname(output_path) # Head of the path.
+			print("Elements downloaded: {}.".format(counter))
 
 
 if __name__ == '__main__':
 	dataset_names = ["MassachusettsRoads", "MassachusettsBuildings"]
 
 	for dataset_name in dataset_names:
-		link_file_images = "Dataset/Links/{}/Images.txt".format(dataset_name)
-		link_file_targets = "Dataset/Links/{}/Targets.txt".format(dataset_name)
-		output_directory = "Dataset/{}/".format(dataset_name)
+		input_path = "Dataset/Links/{}".format(dataset_name)
+		output_path = "Dataset/{}".format(dataset_name)
 
-		if not os.path.exists(output_directory):
-			os.mkdir(output_directory)
-			os.mkdir(output_directory + "Images/")
-			os.mkdir(output_directory + "Targets/")
-
+		if not os.path.exists(output_path):
+			os.mkdir(output_path)
+		
 		start_time = time.time()
-		download_images(link_file_images, output_directory, "Images")
-		download_images(link_file_targets, output_directory, "Targets")
-		print("TOTAL TIME: {} minutes".format(round((time.time() - start_time)/60, 2)))
+		download_images(input_path, output_path)
+		print("Downloaded " + dataset_name + "Dataset. Total time: {} minutes.".format(round((time.time() - start_time)/60, 2)))
